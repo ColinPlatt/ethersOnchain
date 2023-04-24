@@ -1,6 +1,10 @@
 [profile.default]
 src = "src"
 out = "out"
+solc = '0.8.19'
 libs = ["lib"]
+fs_permissions = [{ access = "read-write", path = "./"}]
+ffi = true
+remappings = ['@holic/ethfs/=lib/ethfs/packages/contracts/src']
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

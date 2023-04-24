@@ -1,0 +1,10 @@
+@holic/ethfs/=lib/ethfs/packages/contracts/src/
+ds-test/=lib/forge-std/lib/ds-test/src/
+ethfs/=lib/ethfs/
+ethier/=lib/ethfs/packages/contracts/lib/ethier/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts/=lib/ethfs/packages/contracts/lib/openzeppelin-contracts/
+openzeppelin/=lib/ethfs/packages/contracts/lib/openzeppelin-contracts/contracts/
+solady/=lib/ethfs/packages/contracts/lib/solady/src/
+solidity-stringutils/=lib/solidity-stringutils/
+solmate/=lib/ethfs/packages/contracts/lib/solady/lib/solmate/src/
