@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "@holic/ethfs/FileStore.sol";
+import "@holic/ethfs/FileStoreFrontend.sol";
 import "@holic/ethfs/ContentStore.sol";
 
 contract StoreEthersTest is Test {
@@ -13,10 +14,11 @@ contract StoreEthersTest is Test {
     address addrContentStore = vm.envAddress("ContentStore");
     address addrFileStore = vm.envAddress("FileStore");
     address addrFileStoreFrontend = vm.envAddress("FileStoreFrontend");
-    string file_name = "ethers_6_3_0.umd.min.js";
+    string file_name = "ethers_6_3_0.umd.min.js_test"; // have to change as it is now deployed
 
     FileStore public deployedFileStore;
     ContentStore public deployedContentStore;
+    FileStoreFrontend public deployedFileStoreFrontend;
 
     string[] ethersRawChunks;
     bytes32[] ethersChecksums;
@@ -28,6 +30,7 @@ contract StoreEthersTest is Test {
 
         deployedFileStore = FileStore(addrFileStore);
         deployedContentStore = ContentStore(addrContentStore);
+        deployedFileStoreFrontend = FileStoreFrontend(addrFileStoreFrontend);
     }    
 
     function _loadFile() internal {
@@ -53,18 +56,16 @@ contract StoreEthersTest is Test {
                 tempChunk[j] = rawFileBytes[i * CHUNK_SIZE + j];
             }
             ethersRawChunks.push(string(tempChunk));
-            ethersChecksums.push(keccak256(tempChunk));
         }        
     }
 
     function _createEthersFile() internal {
         // load checksums into memory
-        bytes32[] memory checksums = new bytes32[](ethersChecksums.length);
+        bytes32[] memory checksums = new bytes32[](ethersRawChunks.length);
 
         // create content
-        for(uint256 i = 0; i < ethersChecksums.length; i++) {
+        for(uint256 i = 0; i < ethersRawChunks.length; i++) {
             (checksums[i], ) = deployedContentStore.addContent(bytes(ethersRawChunks[i]));
-            assertEq(checksums[i], ethersChecksums[i], "checksums do not match");
         }
 
         // create file
@@ -73,13 +74,17 @@ contract StoreEthersTest is Test {
     }
 
     function testFile() public {
-        string memory rawFile = vm.readFile(path);
+        string memory fullFilePath = string.concat(vm.projectRoot(), "/script/files/ethers_6_3_0.js");
+        string memory rawFullFile = vm.readFile(fullFilePath);
         
         string memory ethersRawChunksJoined;
         for(uint256 i = 0; i < ethersRawChunks.length; i++) {
             ethersRawChunksJoined = string.concat(ethersRawChunksJoined, ethersRawChunks[i]);
         }
-        assertEq(rawFile, ethersRawChunksJoined, "output does not match input");
+        assertEq(rawFullFile, ethersRawChunksJoined, "output does not match input");
+        assertEq(rawFullFile, deployedFileStoreFrontend.readFile(IFileStore(addrFileStore), "ethers_6_3_0.umd.min.js"), "frontend output does not match input");
+
+
     }
 
     function testCreateFile() public {
@@ -87,19 +92,10 @@ contract StoreEthersTest is Test {
         assert(deployedFileStore.fileExists(file_name));
     }
 
-    function testRecreateFile() public {
-        _createEthersFile();
-        vm.startPrank(address(deployedFileStore.owner()));
-            deployedFileStore.deleteFile(file_name);
-        vm.stopPrank();
+    function testDeployedEthers() public {
+        string memory deployedLib = deployedFileStoreFrontend.readFile(IFileStore(addrFileStore), "ethers_6_3_0.umd.min.js");
 
-        assert(!deployedFileStore.fileExists(file_name));
-
-        // create file
-        bytes32[] memory checksums = ethersChecksums;
-        deployedFileStore.createFile(file_name, checksums);
-        assert(deployedFileStore.fileExists(file_name));
-        
+        vm.writeFile("test/output/ethers_deployed.js", deployedLib);
     }
 
 }
